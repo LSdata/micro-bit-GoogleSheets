@@ -192,12 +192,13 @@
                 var gattName = JSON.stringify(gattServer.device.name);
                 //let blub = 'blub text';
                 //let serializedData = 'id=' + gattID + '&name=' + gattName;
-                let serializedData = 'id=' + gattServer.device.id + '&name=' + gattServer.device.name;
+                //data:{TwitterId: row}
+                //let serializedData = 'id=' + gattServer.device.id + '&name=' + gattServer.device.name;
                 let request = $.ajax({
                     url: "https://script.google.com/macros/s/AKfycbz8gG4TfuVJhkUebJdVXZNugAr-2sLtt9z5AoP_nRoKVwYw7i0/exec",
                     type: "post",
-                    data: serializedData
-                    //data: blub
+                    data: {id: gattServer.device.id, name: gattServer.device.name}
+                    //data: serializedData
                 });
     
                 // callback handler that will be called on success
