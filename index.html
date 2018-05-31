@@ -190,12 +190,10 @@
             function updateGoogleSheets() {                
                 var gattID = JSON.stringify(gattServer.device.id);
                 var gattName = JSON.stringify(gattServer.device.name);
-                //let serializedData = 'id=' + gattServer.device.id + '&name=' + gattServer.device.name;
                 let request = $.ajax({
                     url: "https://script.google.com/macros/s/AKfycbz8gG4TfuVJhkUebJdVXZNugAr-2sLtt9z5AoP_nRoKVwYw7i0/exec",
                     type: "post",
                     data: {id: gattServer.device.id, name: gattServer.device.name}
-                    //data: serializedData
                 });
     
                 // callback handler that will be called on success
@@ -212,7 +210,7 @@
                         "The following error occured: "+
                         textStatus, errorThrown
                     );
-                    alert("The following error occured: "+textStatus +". errorThrown: "+errorThrown +". jqXHR: "+jqXHR);
+                    alert("The following error occured: "+textStatus +". errorThrown: "+errorThrown +". jqXHR: "+JSON.stringify(jqXHR));
                     
                 });
             }
