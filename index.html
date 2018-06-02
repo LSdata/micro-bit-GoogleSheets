@@ -112,80 +112,84 @@
     
      <script>
         'use strict';
-        document.addEventListener('WebComponentsReady', () => {
-            let connectToggle = document.querySelector('#connect');
-            let progress = document.querySelector('#progress');
-            let dialog = document.querySelector('#errorDialog');
-            let gattServer;
-            let commandService;
-            let ButtonACharacteristic;      //for button A
-            let ButtonBCharacteristic;      //for button B
+         document.addEventListener('WebComponentsReady', () => {
+        let connectToggle = document.querySelector('#connect');
+        let progress = document.querySelector('#progress');
+        let dialog = document.querySelector('#errorDialog');
+        let gattServer;
+        let commandService;
+        let writeCharacteristic;
+        let writeCharacteristicPeriod;
+        let busy = false;
+        let commandQueue = [];
+        progress.hidden = true;
+        /**
+         * Check if browser supports Web Bluetooth API.
+         */
+        if (navigator.bluetooth == undefined) {
+          document.getElementById("no-bluetooth").style.display = "block";
+          document.getElementById("no-bluetooth").open();
+        }
+        /**
+         * Reset the app variable states.
+         */
+        function resetVariables() {
+          busy = false;
+          progress.hidden = true;
+          gattServer = null;
+          commandService = null;
+          writeCharacteristic = null;
+          writeCharacteristicPeriod = null;
+          connectToggle.checked = false;
+          connect = false;
+        }
+        /**
+         * API error handler.
+         */
+        function handleError(error) {
+          console.log(error);
+          resetVariables();
+          dialog.open();
+        }
+             
+        function initPeriod() {
+        	 let cmdPinAd = new Uint8Array([0x280]);
+              sendPeriod(cmdPinAd).then(() => {
+                  console.log('Period set.');
+               }).catch(handleError);
+        }
+        function sendPeriod(cmd) {
+          if (writeCharacteristicPeriod) {
+            // Handle one command at a time
+            if (busy) {
+              // Queue commands
+              commandQueueP.push(cmd);
+              return Promise.resolve();
+            }
+            busy = true;
+            return writeCharacteristicPeriod.writeValue(cmd).then(() => {
+              busy = false;
+              // Get next command from queue
+              let nextCommand = commandQueue.shift();
+              if (nextCommand) {
+                sendPeriod(nextCommand);
+              }
+            });
+          } else {
+            return Promise.resolve();
+          }
+        }
+        function handleCharacteristicValueChanged(event) {
+    		  AcceleratorX = event.target.value.getUint16(0)/1000.0;
+    		  console.log('x:' + AcceleratorX);
+    		  AcceleratorY = event.target.value.getUint16(2)/1000.0;
+    		  console.log('y:' + AcceleratorY);
+    		  AcceleratorZ = event.target.value.getUint16(4)/1000.0;
+    		  console.log('z:' + AcceleratorZ);
             
-            let busy = false;
-            let commandQueue = [];
-            progress.hidden = true;
+            updateGoogleSheets();
+    	}
             
-            /**
-             * Check if browser supports Web Bluetooth API.
-             */
-            if (navigator.bluetooth == undefined) {
-                document.getElementById("no-bluetooth").style.display = "block";
-                document.getElementById("no-bluetooth").open();
-            }
-            /**
-             * Reset the app variable states.
-             */
-            function resetVariables() {
-                busy = false;
-                progress.hidden = true;
-                gattServer = null;
-                                
-                ButtonACharacteristic = null;
-                ButtonBCharacteristic = null;
-                commandService = null;
-                
-                commandQueue = []
-                
-                connectToggle.checked = false;
-            }
-            /**
-             * API error handler.
-             */
-            function handleError(error) {
-                console.log(error);
-                resetVariables();
-                dialog.open();
-            }
-        
-            function handleCharacteristicValueChanged1(event) {
-                //Button A
-                let value = event.target.value;
-                let a = [];
-                // Convert raw data bytes to hex values just for the sake of showing something.
-                // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-                // TextDecoder to process raw data bytes.
-                for (let i = 0; i < value.byteLength; i++) {
-                  a.push('0x' + ('00' + value.getUint8(i).toString(16)).slice(-2));
-                }
-                if (a.join(' ') == '0x01' || a.join(' ') == '0x02') 
-                    console.log('A');
-                    updateGoogleSheets();
-                
-            }
-            function handleCharacteristicValueChanged2(event) {
-                //Button B
-                let value = event.target.value;
-                let a = [];
-                // Convert raw data bytes to hex values just for the sake of showing something.
-                // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-                // TextDecoder to process raw data bytes.
-                for (let i = 0; i < value.byteLength; i++) {
-                  a.push('0x' + ('00' + value.getUint8(i).toString(16)).slice(-2));
-                }
-                if (a.join(' ') == '0x01' || a.join(' ') == '0x02') 
-                    console.log('B');
-                    
-            }
             //url: "https://script.google.com/macros/s/AKfycbw8eGyV6GFYV2JtWrerstUqpNeoM8bHjAW2I8gO55XAobtA2LGh/exec",
             function updateGoogleSheets() {                
                 var gattID = JSON.stringify(gattServer.device.id);
@@ -217,69 +221,60 @@
             /**
              * Connect to command characteristic.
              */
-            connectToggle.addEventListener('click', () => {
-                if (gattServer != null && gattServer.connected) {
+             connectToggle.addEventListener('click', () => {
+                  if (gattServer != null && gattServer.connected) {
                     if (gattServer.disconnect) {
-                        console.log('Disconnecting...');
-                        gattServer.disconnect();
+                      console.log('Disconnecting...');
+                      gattServer.disconnect();
                     }
                     resetVariables();
-                } else {
+                  } else {
                     console.log('Connecting...');
-                    connectToggle.checked = true;
                     progress.hidden = false;
-                    if (ButtonACharacteristic == null && ButtonBCharacteristic == null) {
-                        navigator.bluetooth.requestDevice({
-                                filters: [{
-                                    namePrefix: 'BBC micro:bit',
-                                }],
-                                optionalServices: ['e95d9882-251d-470a-a062-fa1922dfa9a8'], //BUTTONSERVICE_SERVICE_UUID
-                            })
-                            .then(device => {
-                                console.log('Connecting to GATT Server...');
-                                return device.gatt.connect();
-                            })
-                            // Button A & B Services
-                            .then(server => {
-                                console.log('> Found GATT server');
-                                gattServer = server;
-                                console.log(server.device);
-                                // Get command service
-                                return gattServer.getPrimaryService('e95d9882-251d-470a-a062-fa1922dfa9a8'); //BUTTONSERVICE_SERVICE_UUID
-                            })
-                            .then(service => {
-                                console.log('> Found command service Button A');
-                                commandService = service;
-                                return commandService.getCharacteristic('e95dda90-251d-470a-a062-fa1922dfa9a8'); //BUTTON1STATE_CHARACTERISTIC_UUID
-                            })
-                            .then(characteristic => {
-                                console.log('> Found Button A characteristic - Start Notification Button 1');
-                                ButtonACharacteristic = characteristic;
-                                return ButtonACharacteristic.startNotifications().then(_ => {
-                                  console.log('> Notifications started');
-                                  ButtonACharacteristic.addEventListener('characteristicvaluechanged',
-                                      handleCharacteristicValueChanged1);
-                                });
-                            })                            
-                            .then(service => {
-                                console.log('> Found command service Button B');
-                                return commandService.getCharacteristic('e95dda91-251d-470a-a062-fa1922dfa9a8'); //BUTTON2STATE_CHARACTERISTIC_UUID
-                            })
-                            .then(characteristic => {
-                                console.log('> Found Button B characteristic - Start Notification Button 2');
-                                ButtonBCharacteristic = characteristic;
-                                return ButtonBCharacteristic.startNotifications().then(_ => {
-                                  console.log('> Notifications started');
-                                  ButtonBCharacteristic.addEventListener('characteristicvaluechanged',
-                                      handleCharacteristicValueChanged2);
-                                    progress.hidden = true;
-                                });
-                            })
-                            .catch(handleError);
-                    } else {
+                    if (writeCharacteristic == null) {
+                      navigator.bluetooth.requestDevice({
+                        filters: [{
+                          namePrefix: 'BBC micro:bit',
+                        }],
+                        optionalServices: ['e95d0753-251d-470a-a062-fa1922dfa9a8'] //ACCELEROMETERSERVICE_SERVICE_UUID
+                      })
+                      .then(device => {
+                        console.log('Connecting to GATT Server...');
+                        return device.gatt.connect();
+                      })
+                      .then(server => {
+                        console.log('> Found GATT server');
+                        gattServer = server;
+                        console.log(gattServer);
+                        // Get command service
+                        return gattServer.getPrimaryService('e95d0753-251d-470a-a062-fa1922dfa9a8'); //ACCELEROMETERSERVICE_SERVICE_UUID
+                      })
+                      .then(service => {
+                        console.log('> Found command service');
+                        commandService = service;
+                        return commandService.getCharacteristic('e95dca4b-251d-470a-a062-fa1922dfa9a8'); //ACCELEROMETERDATA_CHARACTERISTIC_UUID
+                      })
+                       .then(characteristic=> {
+                        console.log('> Found write characteristic');
+                        writeCharacteristic = characteristic;
+                        writeCharacteristic.startNotifications();
+                        writeCharacteristic.addEventListener('characteristicvaluechanged',handleCharacteristicValueChanged);	
+                        return commandService.getCharacteristic('e95dfb24-251d-470a-a062-fa1922dfa9a8'); //ACCELEROMETERPERIOD_CHARACTERISTIC_UUID
+                      })
+                      .then(PeriodCharacteristic => {
+                        writeCharacteristicPeriod = PeriodCharacteristic;
+                        //initPeriod();
                         progress.hidden = true;
+                        connect = true;
+                      })
+
+
+                      .catch(handleError);
+                    } else {
+                      progress.hidden = true;
+                      connect = true;
                     }
-                }
+                  }
             });
         });
     </script>
