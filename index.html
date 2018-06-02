@@ -247,17 +247,13 @@
                     console.log('Connecting...');
                     connectToggle.checked = true;
                     progress.hidden = false;
-                    /*
-                    BUTTONSERVICE_SERVICE_UUID: e95d9882-251d-470a-a062-fa1922dfa9a8
-                    MicroBit Temperature Service: e95d6100-251d-470a-a062-fa1922dfa9a8
-                    MicroBit Temperature Period: e95d1b25-251d-470a-a062-fa1922dfa9a8 
-                    */
-                    if (ButtonACharacteristic == null && ButtonBCharacteristic == null && tempCharacteristic == null) {
+
+                    if (ButtonACharacteristic == null && ButtonBCharacteristic == null) {
                         navigator.bluetooth.requestDevice({
                                 filters: [{
                                     namePrefix: 'BBC micro:bit',
                                 }],
-                                optionalServices: ['e95d9882-251d-470a-a062-fa1922dfa9a8','e95d6100-251d-470a-a062-fa1922dfa9a8', 'e95d1b25-251d-470a-a062-fa1922dfa9a8'], //BUTTONSERVICE_SERVICE_UUID, temp service, temp period
+                                optionalServices: ['e95d9882-251d-470a-a062-fa1922dfa9a8'], //BUTTONSERVICE_SERVICE_UUID
                             })
                             .then(device => {
                                 console.log('Connecting to GATT Server...');
@@ -300,7 +296,44 @@
                                 });
                             })
                             .catch(handleError);
-                    } else {
+                    } 
+                    
+                    //MicroBit Temperature Service
+                    if (tempCharacteristic == null) {
+                        navigator.bluetooth.requestDevice({
+                                filters: [{
+                                    namePrefix: 'BBC micro:bit',
+                                }],
+                                optionalServices: ['e95d6100-251d-470a-a062-fa1922dfa9a8'], //MicroBit Temperature Service
+                            })
+                            .then(device => {
+                                console.log('Connecting to GATT Server...');
+                                return device.gatt.connect();
+                            })
+                            .then(server => {
+                                console.log('> Found GATT server');
+                                gattServer = server;
+                                console.log(server.device);
+                                // Get command service
+                                return gattServer.getPrimaryService('e95d9882-251d-470a-a062-fa1922dfa9a8'); //MicroBit Temperature Service
+                            })
+                            .then(service => {
+                                console.log('> Found command service temp');
+                                commandService = service;
+                                return commandService.getCharacteristic('e95d1b25-251d-470a-a062-fa1922dfa9a8'); //MicroBit Temperature Period
+                            })
+                            .then(characteristic => {
+                                console.log('> Found temp characteristic - Start Notification temp');
+                                tempCharacteristic = characteristic;
+                                return tempCharacteristic.startNotifications().then(_ => {
+                                  console.log('> Notifications started');
+                                  tempCharacteristic.addEventListener('characteristicvaluechanged',
+                                      handleCharacteristicValueChanged3);
+                                });
+                            })                           
+                            .catch(handleError);
+                    }
+                    else {
                         progress.hidden = true;
                     }
                 }
