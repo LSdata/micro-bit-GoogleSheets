@@ -207,7 +207,7 @@
             
             //url: "https://script.google.com/macros/s/AKfycbw8eGyV6GFYV2JtWrerstUqpNeoM8bHjAW2I8gO55XAobtA2LGh/exec",
             function updateGoogleSheets() {      
-                alert(JSON.stringify(gattServer.device));
+                alert(gattServer.device);
                 var gattID = JSON.stringify(gattServer.device.id);
                 var gattName = JSON.stringify(gattServer.device.name);
                 let request = $.ajax({
