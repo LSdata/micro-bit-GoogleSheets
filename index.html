@@ -120,8 +120,6 @@
             let commandService;
             let ButtonACharacteristic;      //for button A
             let ButtonBCharacteristic;      //for button B
-            let tempCharacteristic;      //for temperature
-
             
             let busy = false;
             let commandQueue = [];
@@ -144,7 +142,6 @@
                                 
                 ButtonACharacteristic = null;
                 ButtonBCharacteristic = null;
-                tempCharacteristic = null;
                 commandService = null;
                 
                 commandQueue = []
@@ -163,7 +160,6 @@
             function handleCharacteristicValueChanged1(event) {
                 //Button A
                 let value = event.target.value;
-                alert("value: "+value)
                 let a = [];
                 // Convert raw data bytes to hex values just for the sake of showing something.
                 // In the "real" world, you'd use data.getUint8, data.getUint16 or even
@@ -190,25 +186,8 @@
                     console.log('B');
                     
             }
-            //temp
-            function handleCharacteristicValueChanged3(event) {
-                //temp
-                let value = event.target.value;
-                let a = [];
-          
-                //Temperature : Signed integer 8 bit value in celsius.
-                for (let i = 0; i < value.byteLength; i++) {
-                  a.push('0x' + ('00' + value.getInt8(i).toString(16)).slice(-2));
-                }
-                if (a.join(' ') == '0x01' || a.join(' ') == '0x02') 
-                    console.log('temp');
-                    alert("temp event value: "+value);
-                
-            }            
-            
             //url: "https://script.google.com/macros/s/AKfycbw8eGyV6GFYV2JtWrerstUqpNeoM8bHjAW2I8gO55XAobtA2LGh/exec",
-            function updateGoogleSheets() {      
-                alert(gattServer.device);
+            function updateGoogleSheets() {                
                 var gattID = JSON.stringify(gattServer.device.id);
                 var gattName = JSON.stringify(gattServer.device.name);
                 let request = $.ajax({
@@ -249,7 +228,6 @@
                     console.log('Connecting...');
                     connectToggle.checked = true;
                     progress.hidden = false;
-
                     if (ButtonACharacteristic == null && ButtonBCharacteristic == null) {
                         navigator.bluetooth.requestDevice({
                                 filters: [{
@@ -298,44 +276,7 @@
                                 });
                             })
                             .catch(handleError);
-                    } 
-                    
-                    //MicroBit Temperature Service
-                    if (tempCharacteristic == null) {
-                        navigator.bluetooth.requestDevice({
-                                filters: [{
-                                    namePrefix: 'BBC micro:bit',
-                                }],
-                                optionalServices: ['e95d6100-251d-470a-a062-fa1922dfa9a8'], //MicroBit Temperature Service
-                            })
-                            .then(device => {
-                                console.log('Connecting to GATT Server...');
-                                return device.gatt.connect();
-                            })
-                            .then(server => {
-                                console.log('> Found GATT server');
-                                gattServer = server;
-                                console.log(server.device);
-                                // Get command service
-                                return gattServer.getPrimaryService('e95d9882-251d-470a-a062-fa1922dfa9a8'); //MicroBit Temperature Service
-                            })
-                            .then(service => {
-                                console.log('> Found command service temp');
-                                commandService = service;
-                                return commandService.getCharacteristic('e95d1b25-251d-470a-a062-fa1922dfa9a8'); //MicroBit Temperature Period
-                            })
-                            .then(characteristic => {
-                                console.log('> Found temp characteristic - Start Notification temp');
-                                tempCharacteristic = characteristic;
-                                return tempCharacteristic.startNotifications().then(_ => {
-                                  console.log('> Notifications started');
-                                  tempCharacteristic.addEventListener('characteristicvaluechanged',
-                                      handleCharacteristicValueChanged3);
-                                });
-                            })                           
-                            .catch(handleError);
-                    }
-                    else {
+                    } else {
                         progress.hidden = true;
                     }
                 }
