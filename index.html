@@ -194,15 +194,14 @@
                 //temp
                 let value = event.target.value;
                 let a = [];
-                // Convert raw data bytes to hex values just for the sake of showing something.
-                // In the "real" world, you'd use data.getUint8, data.getUint16 or even
-                // TextDecoder to process raw data bytes.
+          
+                //Temperature : Signed integer 8 bit value in celsius.
                 for (let i = 0; i < value.byteLength; i++) {
-                  a.push('0x' + ('00' + value.getUint8(i).toString(16)).slice(-2));
+                  a.push('0x' + ('00' + value.getInt8(i).toString(16)).slice(-2));
                 }
                 if (a.join(' ') == '0x01' || a.join(' ') == '0x02') 
                     console.log('temp');
-                    alert(value);
+                    alert("temp event value: "+value);
                 
             }            
             
@@ -248,12 +247,17 @@
                     console.log('Connecting...');
                     connectToggle.checked = true;
                     progress.hidden = false;
-                    if (ButtonACharacteristic == null && ButtonBCharacteristic == null) {
+                    /*
+                    BUTTONSERVICE_SERVICE_UUID: e95d9882-251d-470a-a062-fa1922dfa9a8
+                    MicroBit Temperature Service: e95d6100-251d-470a-a062-fa1922dfa9a8
+                    MicroBit Temperature Period: e95d1b25-251d-470a-a062-fa1922dfa9a8 
+                    */
+                    if (ButtonACharacteristic == null && ButtonBCharacteristic == null && tempCharacteristic == null) {
                         navigator.bluetooth.requestDevice({
                                 filters: [{
                                     namePrefix: 'BBC micro:bit',
                                 }],
-                                optionalServices: ['e95d9882-251d-470a-a062-fa1922dfa9a8'], //BUTTONSERVICE_SERVICE_UUID
+                                optionalServices: ['e95d9882-251d-470a-a062-fa1922dfa9a8','e95d6100-251d-470a-a062-fa1922dfa9a8', 'e95d1b25-251d-470a-a062-fa1922dfa9a8'], //BUTTONSERVICE_SERVICE_UUID, temp service, temp period
                             })
                             .then(device => {
                                 console.log('Connecting to GATT Server...');
