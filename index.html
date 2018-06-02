@@ -112,24 +112,27 @@
     
      <script>
         'use strict';
-         document.addEventListener('WebComponentsReady', () => {
-        let connectToggle = document.querySelector('#connect');
-        let progress = document.querySelector('#progress');
-        let dialog = document.querySelector('#errorDialog');
-        let gattServer;
-        let commandService;
-        let writeCharacteristic;
-        let writeCharacteristicPeriod;
-        let busy = false;
-        let commandQueue = [];
-        progress.hidden = true;
-        /**
-         * Check if browser supports Web Bluetooth API.
-         */
-        if (navigator.bluetooth == undefined) {
-          document.getElementById("no-bluetooth").style.display = "block";
-          document.getElementById("no-bluetooth").open();
-        }
+          document.addEventListener('WebComponentsReady', () => {
+            let connectToggle = document.querySelector('#connect');
+            let progress = document.querySelector('#progress');
+            let dialog = document.querySelector('#errorDialog');
+            
+            let gattServer;
+            let commandService;
+            let writeCharacteristic;
+            let writeCharacteristicPeriod;
+            
+            let busy = false;
+            let commandQueue = [];
+            progress.hidden = true;
+            
+            /**
+             * Check if browser supports Web Bluetooth API.
+             */
+            if (navigator.bluetooth == undefined) {
+                document.getElementById("no-bluetooth").style.display = "block";
+                document.getElementById("no-bluetooth").open();
+            }
         /**
          * Reset the app variable states.
          */
@@ -137,7 +140,9 @@
           busy = false;
           progress.hidden = true;
           gattServer = null;
+            
           commandService = null;
+          commandQueue = [];
           writeCharacteristic = null;
           writeCharacteristicPeriod = null;
           connectToggle.checked = false;
