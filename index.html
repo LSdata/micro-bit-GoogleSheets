@@ -335,7 +335,7 @@
 		request.done(function (response, textStatus, jqXHR){
 		    // log a message to the console
 		    console.log("Hooray, it worked!");
-		    alert("Hooray, it worked! Respons obj:"+JSON.stringify(response));
+		    //alert("Hooray, it worked! Respons obj:"+JSON.stringify(response));
 		});
 		// callback handler that will be called on failure
 		request.fail(function (jqXHR, textStatus, errorThrown){
@@ -344,7 +344,7 @@
 			"The following error occured: "+
 			textStatus, errorThrown
 		    );
-		    alert("The following error occured: "+textStatus +". errorThrown: "+errorThrown +". jqXHR: "+JSON.stringify(jqXHR));
+		    //alert("The following error occured: "+textStatus +". errorThrown: "+errorThrown +". jqXHR: "+JSON.stringify(jqXHR));
 		});
 	}	      
                                 
