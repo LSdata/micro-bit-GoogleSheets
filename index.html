@@ -188,6 +188,16 @@
             return Promise.resolve();
           }
         }
+	      
+	/*
+	MicroBit Temperature Service: e95d6100-251d-470a-a062-fa1922dfa9a8
+		- Signed integer 8 bit value in celsius. 
+	MicroBit Temperature Period: e95d1b25-251d-470a-a062-fa1922dfa9a8
+		- Determines the frequency with which temperature data is updated in milliseconds.
+	*/
+
+	      
+	//acceleration      
         function handleCharacteristicValueChanged(event) {
     		  AcceleratorX = event.target.value.getUint16(0)/1000.0;
     		  console.log('x:' + AcceleratorX);
