@@ -1,4 +1,4 @@
-   <html>
+<html>
   <head>
     <title>BBC micro:bit Accelerometer Chart</title>
     <meta name="description" content="BBC micro:bit Accelerometer Chart">
@@ -12,6 +12,7 @@
 	<script src="./web/js/jquery.js"></script>
     	<script src="./web/js/jquery.mobile-1.4.5.min.js"></script>
     	<script src="./web/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+	<script type="text/javascript" src="amcharts.js"></script>
 
     <!-- Polymer components -->
     <link rel="import" href="./web/bower_components/paper-progress/paper-progress.html">
@@ -108,10 +109,144 @@
       </div>
     </template>
 
+    <div id="chartdiv" style="width: 100%; height: 340px;"></div>
+
     <script>
       'use strict';
        
       
+    let chart;
+		let chartData = [];
+		let chartCursor;
+		let day = 0;
+		let firstDate = new Date();
+		let str;
+		let AcceleratorX = 0;
+		let AcceleratorY = 0;
+		let AcceleratorZ = 0;
+    let connect = false;
+    function generateChartData() {
+		  for (day = 0; day < 5; day++) {
+		    let newDate = new Date(firstDate);
+		    newDate.setTime(newDate.getTime() + day);
+		    let tempX = Math.round(Math.random() * 40) - 20;
+		    let tempY = Math.round(Math.random() * 40) - 20;
+		    let tempZ = Math.round(Math.random() * 40) - 20;
+		    chartData.push({
+          date: newDate,
+		      tempX: AcceleratorX,
+		      tempY: AcceleratorY,
+		      tempZ: AcceleratorZ
+		    });
+		  }
+		}
+		// create chart
+		AmCharts.ready(function() {
+		    // generate some data first
+		    generateChartData();
+		    // SERIAL CHART    
+		    chart = new AmCharts.AmSerialChart();
+		    chart.pathToImages = "https://www.amcharts.com/lib/images/";
+		    chart.marginTop = 0;
+		    chart.marginRight = 10;
+		    chart.autoMarginOffset = 5;
+		    chart.zoomOutButton = {
+		        backgroundColor: '#000000',
+		        backgroundAlpha: 0.15
+		    };
+		    chart.dataProvider = chartData;
+		    chart.categoryField = "date";
+		    // AXES
+		    // category
+		    let categoryAxis = chart.categoryAxis;
+		    categoryAxis.parseDates = true; // as our data is date-based, we set parseDates to true
+		    categoryAxis.minPeriod = "ss"; // our data is daily, so we set minPeriod to DD
+		    categoryAxis.dashLength = 1;
+		    categoryAxis.gridAlpha = 0.15;
+		    categoryAxis.axisColor = "#DADADA";
+		    // value                
+		    let valueAxis = new AmCharts.ValueAxis();
+		    valueAxis.axisAlpha = 0.2;
+		    valueAxis.dashLength = 1;
+		    chart.addValueAxis(valueAxis);
+		    // GRAPH
+		    let graphx = new AmCharts.AmGraph();
+		    graphx.title = "X line";
+		    graphx.valueField = "tempX";
+		    graphx.bullet = "round";
+		    graphx.bulletBorderColor = "#FFFFFF";
+		    graphx.bulletBorderThickness = 2;
+		    graphx.lineThickness = 2;
+		    graphx.lineColor = "red";
+		    graphx.negativeLineColor = "red";
+		    graphx.hideBulletsCount = 50; // this makes the chart to hide bullets when there are more than 50 series in selection
+		    graphx.type =  "smoothedLine";
+		    chart.addGraph(graphx);
+		    let graphy = new AmCharts.AmGraph();
+		    graphy.title = "Y line";
+		    graphy.valueField = "tempY";
+		    graphy.bullet = "round";
+		    graphy.bulletBorderColor = "#FFFFFF";
+		    graphy.bulletBorderThickness = 2;
+		    graphy.lineThickness = 2;
+		    graphy.lineColor = "green";
+		    graphy.negativeLineColor = "green";
+		    graphy.hideBulletsCount = 50; // this makes the chart to hide bullets when there are more than 50 series in selection
+		    graphy.type =  "smoothedLine";
+		    chart.addGraph(graphy);
+		    let graphz = new AmCharts.AmGraph();
+		    graphz.title = "Y line";
+		    graphz.valueField = "tempZ";
+		    graphz.bullet = "round";
+		    graphz.bulletBorderColor = "#FFFFFF";
+		    graphz.bulletBorderThickness = 2;
+		    graphz.lineThickness = 2;
+		    graphz.lineColor = "blue";
+		    graphz.negativeLineColor = "blue";
+		    graphz.hideBulletsCount = 50; // this makes the chart to hide bullets when there are more than 50 series in selection
+		    graphz.type =  "smoothedLine";
+		    chart.addGraph(graphz);
+		    // CURSOR
+		    chartCursor = new AmCharts.ChartCursor();
+		    chartCursor.cursorPosition = "mouse";
+		    chart.addChartCursor(chartCursor);
+		    // SCROLLBAR
+		    let chartScrollbar = new AmCharts.ChartScrollbar();
+		    chartScrollbar.graph = graphx;
+		    chartScrollbar.scrollbarHeight = 40;
+		    chartScrollbar.color = "#FFFFFF";
+		    chartScrollbar.autoGridCount = true;
+		    chart.addChartScrollbar(chartScrollbar);
+		    // WRITE
+		    chart.write("chartdiv");
+		    
+		    // set up the chart to update every second
+		    setInterval(function () {
+            if(connect) {
+  		        // normally you would load new datapoints here,
+  		        // but we will just generate some random values
+  		        // and remove the value from the beginning so that
+  		        // we get nice sliding graph feeling
+  		        
+  		        // remove datapoint from the beginning
+  		        chart.dataProvider.shift();
+  		        
+  		        // add new one at the end
+  		        day++;
+  		        let firstDate1 = new Date();
+  		        let newDate = new Date(firstDate1);
+  		        newDate.setTime(newDate.getTime() +  day);
+  		        //console.log('AcceleratorX:' + AcceleratorX);
+  		        chart.dataProvider.push({
+  		            date: newDate,
+  		            tempX: AcceleratorX,
+  		            tempY: AcceleratorY,
+  		            tempZ: AcceleratorZ
+  		        });
+  		        chart.validateData();
+            }
+		    }, 1000);
+		});
       document.addEventListener('WebComponentsReady', () => {
         let connectToggle = document.querySelector('#connect');
         let progress = document.querySelector('#progress');
@@ -186,7 +321,6 @@
     		  AcceleratorZ = event.target.value.getUint16(4)/1000.0;
     		  console.log('z:' + AcceleratorZ);
 		
-		//set time intervalls..
 		updateGoogleSheets();
     	}
 	      
@@ -197,14 +331,12 @@
 		    type: "post",
 		    data: {id: 'micro:bit', accX: AcceleratorX }
 		});
-
 		// callback handler that will be called on success
 		request.done(function (response, textStatus, jqXHR){
 		    // log a message to the console
 		    console.log("Hooray, it worked!");
-		    //alert("Hooray, it worked! Respons obj:"+JSON.stringify(response));
+		    alert("Hooray, it worked! Respons obj:"+JSON.stringify(response));
 		});
-
 		// callback handler that will be called on failure
 		request.fail(function (jqXHR, textStatus, errorThrown){
 		    // log the error to the console
@@ -212,8 +344,7 @@
 			"The following error occured: "+
 			textStatus, errorThrown
 		    );
-		    //alert("The following error occured: "+textStatus +". errorThrown: "+errorThrown +". jqXHR: "+JSON.stringify(jqXHR));
-
+		    alert("The following error occured: "+textStatus +". errorThrown: "+errorThrown +". jqXHR: "+JSON.stringify(jqXHR));
 		});
 	}	      
                                 
@@ -279,4 +410,5 @@
     </script>
   
 
-</body></html>
+</body>
+</html>
