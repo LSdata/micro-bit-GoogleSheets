@@ -118,7 +118,10 @@
 	let firstDate = new Date();
 	let str;
 	let AcceleratorX = 0;
-	let AcceleratorY = 0;
+	
+	    let temp = 0;
+
+	    let AcceleratorY = 0;
 	let AcceleratorZ = 0;
     	let connect = false;
       document.addEventListener('WebComponentsReady', () => {
@@ -194,9 +197,8 @@
 	MicroBit Temperature Period: e95d1b25-251d-470a-a062-fa1922dfa9a8
 		- Determines the frequency with which temperature data is updated in milliseconds.
 	*/
-	      
-	//acceleration      
-        function handleCharacteristicValueChanged(event) {
+	//temp      
+        function handleCharacteristicValueChangedT(event) {
     		  AcceleratorX = event.target.value.getUint16(0)/1000.0;
     		  console.log('x:' + AcceleratorX);
     		  AcceleratorY = event.target.value.getUint16(2)/1000.0;
@@ -207,12 +209,21 @@
 		updateGoogleSheets();
     	}
 	      
+	//acceleration      
+        function handleCharacteristicValueChanged(event) {
+    		  temp = event.target.value.getInt8(0);
+    		  console.log('temp:' + temp);
+    		 
+		
+		updateGoogleSheets();
+    	}
+	      
 	//url: "https://script.google.com/macros/s/AKfycbyZGdMcniOYls5odhoQEOpkSqGZVDXqO0tAwcRPsxU-_njvoj3_/exec",
 	function updateGoogleSheets() {                
 		let request = $.ajax({
 		    url: "https://script.google.com/macros/s/AKfycbyZGdMcniOYls5odhoQEOpkSqGZVDXqO0tAwcRPsxU-_njvoj3_/exec",
 		    type: "post",
-		    data: {id: 'micro:bit', accX: AcceleratorX }
+		    data: {id: 'micro:bit', accX: temp }
 		});
 		// callback handler that will be called on success
 		request.done(function (response, textStatus, jqXHR){
@@ -249,7 +260,7 @@
                 filters: [{
                   namePrefix: 'BBC micro:bit',
                 }],
-                optionalServices: ['e95d0753-251d-470a-a062-fa1922dfa9a8'] //ACCELEROMETERSERVICE_SERVICE_UUID
+                optionalServices: ['e95d6100-251d-470a-a062-fa1922dfa9a8'] //temp service
               })
               .then(device => {
                 console.log('Connecting to GATT Server...');
@@ -260,19 +271,19 @@
                 gattServer = server;
                 console.log(gattServer);
                 // Get command service
-                return gattServer.getPrimaryService('e95d0753-251d-470a-a062-fa1922dfa9a8'); //ACCELEROMETERSERVICE_SERVICE_UUID
+                return gattServer.getPrimaryService('e95d6100-251d-470a-a062-fa1922dfa9a8'); //temp service
               })
               .then(service => {
                 console.log('> Found command service');
                 commandService = service;
-                return commandService.getCharacteristic('e95dca4b-251d-470a-a062-fa1922dfa9a8'); //ACCELEROMETERDATA_CHARACTERISTIC_UUID
+                return commandService.getCharacteristic('e95d1b25-251d-470a-a062-fa1922dfa9a8'); //temp period
               })
                .then(characteristic=> {
                 console.log('> Found write characteristic');
                 writeCharacteristic = characteristic;
                 writeCharacteristic.startNotifications();
-                writeCharacteristic.addEventListener('characteristicvaluechanged',handleCharacteristicValueChanged);	
-                return commandService.getCharacteristic('e95dfb24-251d-470a-a062-fa1922dfa9a8'); //ACCELEROMETERPERIOD_CHARACTERISTIC_UUID
+                writeCharacteristic.addEventListener('characteristicvaluechanged',handleCharacteristicValueChangedT);	
+                return commandService.getCharacteristic('e95d1b25-251d-470a-a062-fa1922dfa9a8'); //temp period
               })
               .then(PeriodCharacteristic => {
               	writeCharacteristicPeriod = PeriodCharacteristic;
