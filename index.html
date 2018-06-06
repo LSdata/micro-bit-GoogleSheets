@@ -198,7 +198,7 @@
 		- Determines the frequency with which temperature data is updated in milliseconds.
 	*/
 	//temp      
-        function handleCharacteristicValueChangedT(event) {
+        function handleCharacteristicValueChanged(event) {
     		  AcceleratorX = event.target.value.getUint16(0)/1000.0;
     		  console.log('x:' + AcceleratorX);
     		  AcceleratorY = event.target.value.getUint16(2)/1000.0;
@@ -210,7 +210,7 @@
     	}
 	      
 	//acceleration      
-        function handleCharacteristicValueChanged(event) {
+        function handleCharacteristicValueChangedT(event) {
     		  temp = event.target.value.getInt8(0);
     		  console.log('temp:' + temp);
     		 
